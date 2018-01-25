@@ -7,24 +7,37 @@ class Pawn(Piece):
     def __str__(self):
         return "P"
 
-    def move(self, initial_position, new_position):
-        movement = Position.position_delta(initial_position, new_position)
+    def move(self, current_position, new_position):
+        movement = Position.position_delta(current_position, new_position)
+        
+        if self.color == Piece.WHITE:  # White pawn
+            if new_position.y > current_position.y:  # Move forward
+                if current_position.y == 1:  # Initial position (never moved)
+                    if movement.y in range(1, 3):  # Move from 1 to 2 cells
+                        return True
+                else:  # Pawn already moved
+                    if movement.y == 1:  # Move 1 cell
+                        return True
+        else:  # Black pawn
+            if new_position.y < current_position.y:  # Move forward
+                if current_position.y == 6:  # Initial position (never moved)
+                    if movement.y in range(1, 3):  # Move from 1 to 2 cells
+                        return True
+                else:  # Pawn already moved
+                    if movement.y == 1:  # Move 1 cell
+                        return True
 
-        # Color 0: White / Color 1: Black | Initial position
-        if self.color == 0 and initial_position.y == 1 or self.color == 1 and initial_position.y == 6:
-            if new_position.y > initial_position.y and movement.y in range(1, 3):
-                return True
+        return False  # if did not pass any verification -> movement not allowed
 
-        # Already Moved
-        if new_position.y > initial_position.y and movement.y == 1:
-            return True
+    def move_eat(self, current_position, new_position):
+        movement = Position.position_delta(current_position, new_position)
 
-        return False
-
-    def move_eat(self, initial_position, new_position):
-        movement = Position.position_delta(initial_position, new_position)
-
-        if new_position.y > initial_position.y and movement.x == 1 and movement.y == 1:
-            return True
+        if movement.x == 1 and movement.y == 1:  # Move one cell in diagonal
+            if self.color == Piece.WHITE:  # White pawn
+                if new_position.y > current_position.y:  # Move forward
+                    return True
+            else:  # Black pawn
+                if new_position.y < current_position.y:  # Move forward
+                    return True
 
         return False
