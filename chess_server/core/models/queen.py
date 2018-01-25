@@ -1,5 +1,5 @@
-from core.models.piece import Piece
-from core.models.position import Position
+from chess_server.core.models.piece import Piece
+from chess_server.core.models.position import Position
 
 
 class Queen(Piece):

@@ -1,7 +1,7 @@
 import random
 
-from core.models.board import Board
-from core.models.player import Player
+from chess_server.core.models.board import Board
+from chess_server.core.models.player import Player
 
 
 class Game:

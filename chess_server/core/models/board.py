@@ -1,11 +1,11 @@
-from core.models.position import Position
-from core.models.piece import Piece
-from core.models.pawn import Pawn
-from core.models.knight import Knight
-from core.models.queen import Queen
-from core.models.bishop import Bishop
-from core.models.rook import Rook
-from core.models.king import King
+from chess_server.core.models.position import Position
+from chess_server.core.models.piece import Piece
+from chess_server.core.models.pawn import Pawn
+from chess_server.core.models.knight import Knight
+from chess_server.core.models.queen import Queen
+from chess_server.core.models.bishop import Bishop
+from chess_server.core.models.rook import Rook
+from chess_server.core.models.king import King
 
 
 class Board:
