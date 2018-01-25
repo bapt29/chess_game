@@ -17,9 +17,9 @@ class Board:
     def __str__(self):
         string = ""
 
-        for j in range(8):
-            for i in range(8):
-                position = Position(i, j)
+        for y in range(7, -1, -1):  # Start at top of board
+            for x in range(8):
+                position = Position(x, y)
 
                 if self.piece_at(position):
                     string += str(self.__piece_list[position])
