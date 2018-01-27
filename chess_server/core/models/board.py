@@ -10,7 +10,8 @@ from chess_server.core.models.king import King
 
 class Board:
 
-    def __init__(self):
+    def __init__(self, game=None):
+        self.__game = game
         self.__piece_list = dict()
         self.__init_board()
 
@@ -97,8 +98,7 @@ class Board:
         except KeyError:
             pass
         else:
-            if not piece.eaten:
-                return piece
+            return piece
 
         return None
 
@@ -109,12 +109,25 @@ class Board:
 
         return None
 
+    def set_piece_position(self, current_position, new_position):
+        piece = self.piece_at(current_position)
+
+        if piece is not None:
+            self.__piece_list[new_position] = self.delete_piece(piece)
+
     def get_piece_by_id(self, piece_id):
         for piece in self.__piece_list.values():
             if piece.id == piece_id:
                 return piece
 
         return None
+
+    def get_pieces_next_to(self, position):
+        # Return tuple with the piece on two possible position
+        return self.piece_at(Position(position.x - 1, position.y)), self.piece_at(Position(position.x - 1, position.y))
+
+    def delete_piece(self, piece):
+        return self.__piece_list.pop(self.get_piece_position(piece))
 
     def move_piece(self, piece_id, new_position):
         piece = self.get_piece_by_id(piece_id)
@@ -133,53 +146,75 @@ class Board:
                 if piece.color == piece_at_new_position.color:  # Own piece
                     return False
 
-                piece_at_new_position.eaten = True
-
-            # TODO: Huge mistake to fix out: Potentially 2 pieces on same position if a piece has been eaten
+                self.delete_piece(piece_at_new_position)  # Captured a piece: remove it from the list
 
             return True
 
-        return False # TODO: Return a specific value when a piece has been eaten
+        return False # TODO: Return a specific value when a piece has been captured
 
-    def move_pawn(self, piece, initial_position, new_position): # Specific method for pawns (handle exceptions)
+    def move_pawn(self, pawn, current_position, new_position): # Specific method for pawns (handle exceptions)
         # TODO: Prevent pawn from eating a piece just in front (it can only eat piece in its diagonal)
         # TODO: Handle "En passant" move (If there is a piece next to the pawn, it can eat it)
         # TODO: Handle "Promotion" move (If the pawn reach border of board, it can transform to any kind of piece)
+        movement = Position.position_delta(current_position, new_position)
+        piece_at_new_position = self.piece_at(new_position)
 
-        possible_piece1 = self.piece_at(new_position)  # There is a piece in its direct diagonal
+        if movement.x == 0:  # Linear movement
+            if pawn.move(current_position, new_position) and self.detect_collision(current_position, new_position):
+                if piece_at_new_position is None:  # Pawn can't eat with linear movement
+                    self.en_passant_handler(pawn, new_position)
+                    return True
+        else:  # Diagonal movement (should capture a piece)
+            if pawn.move_eat(current_position, new_position):
+                if piece_at_new_position is not None:  # There is a piece at new position
+                    if pawn.color != piece_at_new_position.color:
+                        self.delete_piece(piece_at_new_position)
+                        self.en_passant_handler(pawn, new_position)
 
-        # "En passant" move
-        delta_y = -1 if piece.color == Piece.WHITE else 1
-        possible_piece2 = self.piece_at(Position(new_position.x, new_position.y - delta_y))
+                        return True
+                else:
+                    # Piece next to this pawn's current position and behind wanted position
+                    piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
+                    piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
+                    # TODO: End the "en passant" implementation here
 
-        return False # TODO: Return a specific value when a piece has been eaten
+        return False # TODO: Return a specific value when a piece has been captured
 
-    def is_movement_allowed(self, piece, initial_position, new_position):
-        if piece.move(initial_position, new_position) and not self.detect_collision(initial_position, new_position):
+    def en_passant_handler(self, pawn, new_position):
+        pieces_next_to_new_position = self.get_pieces_next_to(new_position)
+
+        if pieces_next_to_new_position[0] is not None:
+            pawn.en_passant[pieces_next_to_new_position[0].id] = self.__game.turn
+
+        if pieces_next_to_new_position[1] is not None:
+            pawn.en_passant[pieces_next_to_new_position[1].id] = self.__game.turn
+
+    def is_movement_allowed(self, piece, current_position, new_position):
+        if piece.move(current_position, new_position) and not self.detect_collision(current_position, new_position):
             return True
 
         return False
 
-    def detect_collision(self, initial_position, new_position):
-        movement = new_position - initial_position
+    def detect_collision(self, current_position, new_position):
+        movement = new_position - current_position
         absolute_movement = abs(movement)
 
-        if absolute_movement.x == 1 or absolute_movement.y == 1:  # No collision possible
+        if absolute_movement.x == 1 or absolute_movement.y == 1:  # Move one cell only -> no collision possible
             return False
 
         if absolute_movement.x > 1 and absolute_movement.y > 1:  # Diagonal movement
-            for x in range(initial_position.x, new_position.x, 1 if movement.x > 1 else -1):
-                for y in range(initial_position.y, new_position.y, 1 if movement.y > 1 else -1):
+            for x in range(current_position.x, new_position.x, 1 if movement.x > 1 else -1):
+                for y in range(current_position.y, new_position.y, 1 if movement.y > 1 else -1):
                     if self.piece_at(Position(x, y)):
                         return True
         else:  # Linear movement
             if absolute_movement.x > 1:  # Movement on X
-                for x in range(initial_position.x, new_position.x, 1 if movement.x > 1 else -1):
-                    if self.piece_at(Position(x, initial_position.y)):
+                for x in range(current_position.x, new_position.x, 1 if movement.x > 1 else -1):
+                    if self.piece_at(Position(x, current_position.y)):
                         return True
             else:  # Movement on Y
-                for y in range(initial_position.y, new_position.y, 1 if movement.y > 1 else -1):
-                    if self.piece_at(Position(initial_position.x, y)):
+                for y in range(current_position.y, new_position.y, 1 if movement.y > 1 else -1):
+                    if self.piece_at(Position(current_position.x, y)):
                         return True
 
         return False
