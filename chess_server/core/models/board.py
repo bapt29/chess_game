@@ -109,9 +109,7 @@ class Board:
 
         return None
 
-    def set_piece_position(self, current_position, new_position):
-        piece = self.piece_at(current_position)
-
+    def set_piece_position(self, piece, new_position):
         if piece is not None:
             self.__piece_list[new_position] = self.delete_piece(piece)
 
@@ -148,6 +146,8 @@ class Board:
 
                 self.delete_piece(piece_at_new_position)  # Captured a piece: remove it from the list
 
+            self.set_piece_position(piece, new_position)
+
             return True
 
         return False # TODO: Return a specific value when a piece has been captured
@@ -161,8 +161,13 @@ class Board:
 
         if movement.x == 0:  # Linear movement
             if pawn.move(current_position, new_position) and self.detect_collision(current_position, new_position):
-                if piece_at_new_position is None:  # Pawn can't eat with linear movement
+                if piece_at_new_position is None:  # Pawn can't capture with linear movement
                     self.en_passant_handler(pawn, new_position)
+                    self.set_piece_position(pawn, new_position)
+
+                    if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
+                        pass
+
                     return True
         else:  # Diagonal movement (should capture a piece)
             if pawn.move_eat(current_position, new_position):
@@ -170,13 +175,26 @@ class Board:
                     if pawn.color != piece_at_new_position.color:
                         self.delete_piece(piece_at_new_position)
                         self.en_passant_handler(pawn, new_position)
+                        self.set_piece_position(pawn, new_position)
+
+                        if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
+                            pass
 
                         return True
                 else:
                     # Piece next to this pawn's current position and behind wanted position
                     piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
                     piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
-                    # TODO: End the "en passant" implementation here
+
+                    if pawn.en_passant[piece_next_to.id] == self.__game.turn + 1:  # If the move is done the next turn
+                        self.delete_piece(piece_next_to)
+                        del pawn.en_passant[piece_next_to.id]
+                        self.set_piece_position(pawn, new_position)
+
+                        if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
+                            pass
+
+                        return True
 
         return False # TODO: Return a specific value when a piece has been captured
 
