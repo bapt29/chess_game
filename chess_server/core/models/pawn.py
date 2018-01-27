@@ -59,7 +59,9 @@ class Pawn(Piece):
         if self.__class__ == piece_type_chosen:  # Chose a pawn: don't need modification
             return
 
+        saved_id = self.id
         new_piece = piece_type_chosen(self.color)
 
         self.__dict__ = new_piece.__dict__
         self.__class__ = piece_type_chosen
+        self.id = saved_id  # Keep same id: Avoid problems between server and client
