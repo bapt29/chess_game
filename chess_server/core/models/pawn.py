@@ -4,6 +4,11 @@ from chess_server.core.models.position import Position
 
 class Pawn(Piece):
 
+    def __init__(self, color):
+        Piece.__init__(self, color)
+        self.en_passant_turn = 0  # Special movement "en passant": available only one turn
+        self.en_passant_piece_id = 0  # " " ": the enemy piece related to this move
+
     def __str__(self):
         return "P"
 
@@ -41,3 +46,12 @@ class Pawn(Piece):
                     return True
 
         return False
+
+    def promote_to(self, piece_type_chosen):
+        if self.__class__ == piece_type_chosen:  # Chose a pawn: don't need modification
+            return
+
+        new_piece = piece_type_chosen(self.color)
+
+        self.__dict__ = new_piece.__dict__
+        self.__class__ = piece_type_chosen
