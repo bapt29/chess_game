@@ -84,6 +84,12 @@ class Position:
     def __hash__(self):
         return hash((self.__x, self.__y))
 
+    def __abs__(self):
+        self.__x = abs(self.__x)
+        self.__y = abs(self.__y)
+
+        return self
+
     @staticmethod
     def error_handling(object):
 
