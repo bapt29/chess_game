@@ -9,7 +9,6 @@ class Piece(object):
         self.__id = Piece.piece_id
         Piece.piece_id += 1
         self.__color = color
-        self.__eaten = False
 
     @property
     def id(self):
@@ -36,16 +35,8 @@ class Piece(object):
 
         self.__color = value
 
-    @property
-    def eaten(self):
-        return self.__eaten
-
-    @eaten.setter
-    def eaten(self, value):
-        if not isinstance(value, bool):
-            raise TypeError
-
-        self.__eaten = value
-
     def move(self, initial_position, new_position):
+        raise NotImplementedError
+
+    def __str__(self):
         raise NotImplementedError
