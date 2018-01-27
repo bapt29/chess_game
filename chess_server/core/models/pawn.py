@@ -6,8 +6,7 @@ class Pawn(Piece):
 
     def __init__(self, color):
         Piece.__init__(self, color)
-        self.en_passant_turn = 0  # Special movement "en passant": available only one turn
-        self.en_passant_piece_id = 0  # " " ": the enemy piece related to this move
+        self.en_passant = dict()  # Key: Piece id; Value: Turn number
 
     def __str__(self):
         return "P"
@@ -44,6 +43,15 @@ class Pawn(Piece):
             else:  # Black pawn
                 if new_position.y < current_position.y:  # Move forward
                     return True
+
+        return False
+
+    def is_promotion_available(self, new_position):
+        if new_position.y == 7 and self.color == Piece.WHITE:
+            return True
+
+        if new_position.y == 0 and self.color == Piece.BLACK:
+            return True
 
         return False
 
