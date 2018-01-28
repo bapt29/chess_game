@@ -16,7 +16,7 @@ class Movement:
             raise TypeError('Type int is expected')
 
         if not value in range(-8, 9):
-            raise ValueError('Value must be lower than 8 and greater or equal to 0')
+            raise ValueError('Value must be lower or equal to 8 and greater or equal to -8')
 
         self.__x = value
 
@@ -30,7 +30,7 @@ class Movement:
             raise TypeError('Type int is expected')
 
         if not value in range(-8, 9):
-            raise ValueError('Value must be lower than 8 and greater or equal to 0')
+            raise ValueError('Value must be lower or equal to 8 and greater or equal to -8')
 
         self.__y = value
 
@@ -41,8 +41,6 @@ class Movement:
     def __sub__(self, other):
         if isinstance(other, Movement):
             return Movement(self.x - other.x, self.y - other.y)
-        elif isinstance(other, tuple):
-            return Movement(self.x - other[0], self.y - other[1])
 
     def __iadd__(self, other):
         if isinstance(other, Movement):
