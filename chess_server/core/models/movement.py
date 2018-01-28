@@ -1,10 +1,12 @@
+from chess_server.core.models.position import Position
+
+
 class Movement:
 
-    def __init__(self, x, y):
+    def __init__(self, start_position, end_position):
         self.__x = None
         self.__y = None
-        self.x = x
-        self.y = y
+        self.get_movement(start_position, end_position)
 
     @property
     def x(self):
@@ -61,3 +63,10 @@ class Movement:
         self.__y = abs(self.__y)
 
         return self
+
+    def get_movement(self, start_position, end_position):
+        if not isinstance(start_position, Position) or not isinstance(end_position, Position):
+            raise TypeError
+
+        self.x = end_position.x - start_position.x
+        self.y = end_position.y - start_position.y
