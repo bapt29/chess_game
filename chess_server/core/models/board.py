@@ -1,4 +1,5 @@
 from chess_server.core.models.position import Position
+from chess_server.core.models.movement import Movement
 from chess_server.core.models.piece import Piece
 from chess_server.core.models.pawn import Pawn
 from chess_server.core.models.knight import Knight
@@ -45,12 +46,12 @@ class Board:
         # White pawns
 
         for i in range(8):
-            self.__piece_list[Position(i, 6)] = Pawn(Piece.WHITE)
+            self.__piece_list[Position(i, 1)] = Pawn(Piece.WHITE)
 
         # Black pawns
 
         for i in range(8):
-            self.__piece_list[Position(i, 1)] = Pawn(Piece.BLACK)
+            self.__piece_list[Position(i, 6)] = Pawn(Piece.BLACK)
 
         # White knights
 
@@ -121,8 +122,16 @@ class Board:
         return None
 
     def get_pieces_next_to(self, position):
+        pieces = None
+
+        if position.x == 0:  # Left border
+            return None, self.piece_at(Position(position.x + 1, position.y))
+
+        if position.x == 7:  # Right border
+            return self.piece_at(Position(position.x - 1, position.y)), None
+
         # Return tuple with the piece on two possible position
-        return self.piece_at(Position(position.x - 1, position.y)), self.piece_at(Position(position.x - 1, position.y))
+        return self.piece_at(Position(position.x - 1, position.y)), self.piece_at(Position(position.x + 1, position.y))
 
     def delete_piece(self, piece):
         return self.__piece_list.pop(self.get_piece_position(piece))
@@ -147,7 +156,6 @@ class Board:
                 self.delete_piece(piece_at_new_position)  # Captured a piece: remove it from the list
 
             self.set_piece_position(piece, new_position)
-
             return True
 
         return False # TODO: Return a specific value when a piece has been captured
@@ -160,7 +168,7 @@ class Board:
         piece_at_new_position = self.piece_at(new_position)
 
         if movement.x == 0:  # Linear movement
-            if pawn.move(current_position, new_position) and self.detect_collision(current_position, new_position):
+            if pawn.move(current_position, new_position) and not self.detect_collision(current_position, new_position):
                 if piece_at_new_position is None:  # Pawn can't capture with linear movement
                     self.en_passant_handler(pawn, new_position)
                     self.set_piece_position(pawn, new_position)
@@ -214,25 +222,25 @@ class Board:
         return False
 
     def detect_collision(self, current_position, new_position):
-        movement = new_position - current_position
+        movement = Movement(current_position, new_position)
         absolute_movement = abs(movement)
 
         if absolute_movement.x == 1 or absolute_movement.y == 1:  # Move one cell only -> no collision possible
             return False
 
         if absolute_movement.x > 1 and absolute_movement.y > 1:  # Diagonal movement
-            for x in range(current_position.x, new_position.x, 1 if movement.x > 1 else -1):
-                for y in range(current_position.y, new_position.y, 1 if movement.y > 1 else -1):
-                    if self.piece_at(Position(x, y)):
+            for x in range(current_position.x + 1, new_position.x, 1 if movement.x > 1 else -1):
+                for y in range(current_position.y + 1, new_position.y, 1 if movement.y > 1 else -1):
+                    if self.piece_at(Position(x, y)) is not None:
                         return True
         else:  # Linear movement
             if absolute_movement.x > 1:  # Movement on X
-                for x in range(current_position.x, new_position.x, 1 if movement.x > 1 else -1):
-                    if self.piece_at(Position(x, current_position.y)):
+                for x in range(current_position.x + 1, new_position.x, 1 if movement.x > 1 else -1):
+                    if self.piece_at(Position(x, current_position.y)) is not None:
                         return True
             else:  # Movement on Y
-                for y in range(current_position.y, new_position.y, 1 if movement.y > 1 else -1):
-                    if self.piece_at(Position(current_position.x, y)):
+                for y in range(current_position.y + 1, new_position.y, 1 if movement.y > 1 else -1):
+                    if self.piece_at(Position(current_position.x, y)) is not None:
                         return True
 
         return False
@@ -240,4 +248,9 @@ class Board:
 
 if __name__ == "__main__":
     b = Board()
+    pawn1 = b.piece_at(Position(0, 1))
+    pawn2 = b.piece_at(Position(0, 6))
+    b.move_piece(pawn1.id, Position(0, 3))
+    b.move_piece(pawn2.id, Position(0, 4))
+    b.move_piece(pawn1.id, Position(0, 4))
     print(b)
