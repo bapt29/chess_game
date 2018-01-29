@@ -17,7 +17,7 @@ class Movement:
         if not isinstance(value, int):
             raise TypeError('Type int is expected')
 
-        if not value in range(-8, 9):
+        if value not in range(-8, 9):
             raise ValueError('Value must be lower or equal to 8 and greater or equal to -8')
 
         self.__x = value
@@ -31,7 +31,7 @@ class Movement:
         if not isinstance(value, int):
             raise TypeError('Type int is expected')
 
-        if not value in range(-8, 9):
+        if value not in range(-8, 9):
             raise ValueError('Value must be lower or equal to 8 and greater or equal to -8')
 
         self.__y = value
