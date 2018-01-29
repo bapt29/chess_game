@@ -170,7 +170,7 @@ class Board:
         if movement.x == 0:  # Linear movement
             if pawn.move(current_position, new_position) and not self.detect_collision(current_position, new_position):
                 if piece_at_new_position is None:  # Pawn can't capture with linear movement
-                    self.en_passant_handler(pawn, new_position)
+                #    self.en_passant_handler(pawn, new_position)
                     self.set_piece_position(pawn, new_position)
 
                     if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
@@ -182,7 +182,7 @@ class Board:
                 if piece_at_new_position is not None:  # There is a piece at new position
                     if pawn.color != piece_at_new_position.color:
                         self.delete_piece(piece_at_new_position)
-                        self.en_passant_handler(pawn, new_position)
+                    #    self.en_passant_handler(pawn, new_position)
                         self.set_piece_position(pawn, new_position)
 
                         if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
@@ -194,15 +194,15 @@ class Board:
                     piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
                     piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
 
-                    if pawn.en_passant[piece_next_to.id] == self.__game.turn + 1:  # If the move is done the next turn
-                        self.delete_piece(piece_next_to)
-                        del pawn.en_passant[piece_next_to.id]
-                        self.set_piece_position(pawn, new_position)
+                    # if pawn.en_passant[piece_next_to.id] == self.__game.turn + 1:  # If the move is done the next turn
+                    #    self.delete_piece(piece_next_to)
+                    #    del pawn.en_passant[piece_next_to.id]
+                    #    self.set_piece_position(pawn, new_position)
 
-                        if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
-                            pass
+                    #    if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
+                    #        pass
 
-                        return True
+                    #    return True
 
         return False # TODO: Return a specific value when a piece has been captured
 
@@ -216,8 +216,10 @@ class Board:
             pawn.en_passant[pieces_next_to_new_position[1].id] = self.__game.turn
 
     def is_movement_allowed(self, piece, current_position, new_position):
-        if piece.move(current_position, new_position) and not self.detect_collision(current_position, new_position):
-            return True
+        if piece.move(current_position, new_position):
+            # Knight is allowed to jump over other pieces
+            if isinstance(piece, Knight) or not self.detect_collision(current_position, new_position):
+                return True
 
         return False
 
@@ -248,9 +250,16 @@ class Board:
 
 if __name__ == "__main__":
     b = Board()
+
     pawn1 = b.piece_at(Position(0, 1))
-    pawn2 = b.piece_at(Position(0, 6))
+    pawn2 = b.piece_at(Position(1, 6))
+    pawn3 = b.piece_at(Position(2, 6))
+    knight1 = b.piece_at(Position(1, 7))
+
     b.move_piece(pawn1.id, Position(0, 3))
-    b.move_piece(pawn2.id, Position(0, 4))
-    b.move_piece(pawn1.id, Position(0, 4))
+    b.move_piece(pawn2.id, Position(1, 4))
+    b.move_piece(pawn1.id, Position(1, 4))
+    b.move_piece(knight1.id, Position(2, 5))
+    b.move_piece(pawn3.id, Position(2, 4))
+
     print(b)
