@@ -230,18 +230,28 @@ class Board:
         if absolute_movement.x == 1 or absolute_movement.y == 1:  # Move one cell only -> no collision possible
             return False
 
+        if movement.x > 1:
+            x_range = range(current_position.x + 1, new_position.x)
+        elif movement.x < -1:
+            x_range = range(new_position.x + 1, current_position.x)
+
+        if movement.y > 1:
+            y_range = range(current_position.y + 1, new_position.y)
+        elif movement.y < -1:
+            y_range = range(new_position.y + 1, current_position.y)
+
         if absolute_movement.x > 1 and absolute_movement.y > 1:  # Diagonal movement
-            for x in range(current_position.x + 1, new_position.x, 1 if movement.x > 1 else -1):
-                for y in range(current_position.y + 1, new_position.y, 1 if movement.y > 1 else -1):
+            for x in x_range:
+                for y in y_range:
                     if self.piece_at(Position(x, y)) is not None:
                         return True
         else:  # Linear movement
             if absolute_movement.x > 1:  # Movement on X
-                for x in range(current_position.x + 1, new_position.x, 1 if movement.x > 1 else -1):
+                for x in x_range:
                     if self.piece_at(Position(x, current_position.y)) is not None:
                         return True
             else:  # Movement on Y
-                for y in range(current_position.y + 1, new_position.y, 1 if movement.y > 1 else -1):
+                for y in y_range:
                     if self.piece_at(Position(current_position.x, y)) is not None:
                         return True
 
@@ -257,7 +267,9 @@ if __name__ == "__main__":
     knight1 = b.piece_at(Position(1, 7))
 
     b.move_piece(pawn1.id, Position(0, 3))
+    print(b)
     b.move_piece(pawn2.id, Position(1, 4))
+    print(b)
     b.move_piece(pawn1.id, Position(1, 4))
     b.move_piece(knight1.id, Position(2, 5))
     b.move_piece(pawn3.id, Position(2, 4))
