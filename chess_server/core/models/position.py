@@ -82,6 +82,9 @@ class Position:
         elif isinstance(other, tuple):
             return self.__x == other[0] and self.__y == other[1]
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
         return hash((self.__x, self.__y))
 

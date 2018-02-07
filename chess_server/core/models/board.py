@@ -164,11 +164,14 @@ class Board:
         # TODO: Prevent pawn from eating a piece just in front (it can only eat piece in its diagonal)
         # TODO: Handle "En passant" move (If there is a piece next to the pawn, it can eat it)
         # TODO: Handle "Promotion" move (If the pawn reach border of board, it can transform to any kind of piece)
-        movement = Position.position_delta(current_position, new_position)
+        if current_position == new_position:
+            return
+
+        movement = Movement(current_position, new_position)
         piece_at_new_position = self.piece_at(new_position)
 
         if movement.x == 0:  # Linear movement
-            if pawn.move(current_position, new_position) and not self.detect_collision(current_position, new_position):
+            if pawn.move(current_position, new_position) and self.detect_collision(current_position, new_position) is None:
                 if piece_at_new_position is None:  # Pawn can't capture with linear movement
                 #    self.en_passant_handler(pawn, new_position)
                     self.set_piece_position(pawn, new_position)
@@ -218,17 +221,20 @@ class Board:
     def is_movement_allowed(self, piece, current_position, new_position):
         if piece.move(current_position, new_position):
             # Knight is allowed to jump over other pieces
-            if isinstance(piece, Knight) or not self.detect_collision(current_position, new_position):
+            if isinstance(piece, Knight) or self.detect_collision(current_position, new_position) is None:
                 return True
 
         return False
 
     def detect_collision(self, current_position, new_position):
         movement = Movement(current_position, new_position)
-        absolute_movement = abs(movement)
+        absolute_movement = abs(Movement(current_position, new_position))
 
-        if absolute_movement.x == 1 or absolute_movement.y == 1:  # Move one cell only -> no collision possible
-            return False
+        if absolute_movement.x in range(2) or absolute_movement.y in range(2):  # Move one cell only -> no collision possible
+            return None
+
+        x_range = None
+        y_range = None
 
         if movement.x > 1:
             x_range = range(current_position.x + 1, new_position.x)
@@ -244,18 +250,122 @@ class Board:
             for x in x_range:
                 for y in y_range:
                     if self.piece_at(Position(x, y)) is not None:
-                        return True
+                        return Position(x, y)
         else:  # Linear movement
             if absolute_movement.x > 1:  # Movement on X
                 for x in x_range:
                     if self.piece_at(Position(x, current_position.y)) is not None:
-                        return True
+                        return Position(x, current_position.y)
             else:  # Movement on Y
                 for y in y_range:
                     if self.piece_at(Position(current_position.x, y)) is not None:
-                        return True
+                        return Position(current_position.x, y)
 
-        return False
+        return None
+
+    def is_king_in_check(self, color):
+        king = self.get_pieces(King, color)
+        king_position = self.get_piece_position(king)
+        knight_list = self.get_pieces(Knight, Piece.WHITE if color == Piece.BLACK else Piece.BLACK)
+
+        # Piece list of all pieces that can capture king at next turn
+        piece_list = list()
+
+        # In check detection
+        # At first, check if enemy knights can capture the king
+        for knight in knight_list:
+            knight_position = self.get_piece_position(knight)
+
+            if knight.move(knight_position, king_position):
+                piece_list.append(knight)
+
+        # Secondly, check collisions on every diagonals and lines then check if the piece can move to king's position
+        collision_position_list = self.get_all_collisions_from_position(king_position)
+
+        for position in collision_position_list:
+            piece = self.piece_at(position)
+
+            if piece.color != king.color and piece.move(position, king_position):
+                piece_list.append(piece)
+
+        if len(piece_list) > 0:
+            return piece_list
+
+        return None
+
+    def get_all_collisions_from_position(self, position):
+        position_list = list()
+
+        # Lines
+        # +X
+        position = self.get_collision_to_max_position(position, Position(7, position.y))
+
+        if position is not None:
+            position_list.append(position)
+
+        # -X
+        position = self.get_collision_to_max_position(position, Position(0, position.y))
+
+        if position is not None:
+            position_list.append(position)
+
+        # +Y
+        position = self.get_collision_to_max_position(position, Position(position.x, 7))
+
+        if position is not None:
+            position_list.append(position)
+
+        # -Y
+        position = self.get_collision_to_max_position(position, Position(position.x, 0))
+
+        if position is not None:
+            position_list.append(position)
+
+        # Diagonals
+
+        # +X +Y
+        position = self.get_collision_to_max_position(position, Position(7, 7))
+
+        if position is not None:
+            position_list.append(position)
+
+        # +X -Y
+        position = self.get_collision_to_max_position(position, Position(7, 0))
+
+        if position is not None:
+            position_list.append(position)
+
+        # -X +Y
+        position = self.get_collision_to_max_position(position, Position(0, 7))
+
+        if position is not None:
+            position_list.append(position)
+
+        return position_list
+
+    def get_collision_to_max_position(self, initial_position, max_position):
+        if initial_position != max_position:
+            collision_position = self.detect_collision(initial_position, max_position)
+
+            if collision_position is None:
+                collision_position = self.piece_at(max_position)
+
+            if collision_position is not None:
+                return collision_position
+
+        return None
+
+    def get_pieces(self, piece_type, color):
+        pieces_list = list()
+
+        for position, piece in self.__piece_list.items():
+            if piece.color == color and isinstance(piece, piece_type):
+                if piece_type == King:  # Always only one king on board
+                    return piece
+
+                pieces_list.append(position)
+
+        return pieces_list
 
 
 if __name__ == "__main__":
@@ -263,15 +373,12 @@ if __name__ == "__main__":
 
     pawn1 = b.piece_at(Position(0, 1))
     pawn2 = b.piece_at(Position(1, 6))
-    pawn3 = b.piece_at(Position(2, 6))
-    knight1 = b.piece_at(Position(1, 7))
+
+    print("\n" + str(b))
 
     b.move_piece(pawn1.id, Position(0, 3))
     print(b)
     b.move_piece(pawn2.id, Position(1, 4))
     print(b)
     b.move_piece(pawn1.id, Position(1, 4))
-    b.move_piece(knight1.id, Position(2, 5))
-    b.move_piece(pawn3.id, Position(2, 4))
-
     print(b)
