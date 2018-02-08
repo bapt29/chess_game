@@ -11,6 +11,15 @@ from chess_server.core.models.king import King
 
 class Board:
 
+    CODES = {"normal": 0,
+             "collision": 1,
+             "captured": 2,
+             "own_piece": 3,
+             "no_movement": 4,
+             "pawn_promoted": 5,
+             "pawn_no_piece_to_capture": 6
+             }
+
     def __init__(self, game=None):
         self.__game = game
         self.__piece_list = dict()
@@ -121,6 +130,18 @@ class Board:
 
         return None
 
+    def get_pieces(self, piece_type, color):
+        pieces_list = list()
+
+        for position, piece in self.__piece_list.items():
+            if piece.color == color and isinstance(piece, piece_type):
+                if piece_type == King:  # Always only one king on board
+                    return piece
+
+                pieces_list.append(position)
+
+        return pieces_list
+
     def get_pieces_next_to(self, position):
         pieces = None
 
@@ -140,58 +161,91 @@ class Board:
         piece = self.get_piece_by_id(piece_id)
         piece_position = self.get_piece_position(piece)
 
+        response = {"codes": [], "movement_allowed": False, "collision": int, "captured_piece": int}
+
         if piece is None:
-            return False
+            return response
+
+        if piece_position == new_position:
+            response["codes"].append(Board.CODES["no_movement"])
+            return response
 
         if isinstance(piece, Pawn):  # Use specific pawn method
             return self.move_pawn(piece, piece_position, new_position)
 
-        if self.is_movement_allowed(piece, piece_position, new_position):
+        if piece.move(piece_position, new_position):
+            if not isinstance(piece, Knight):
+                collision = self.detect_collision(piece_position, new_position)
+
+                if collision is not None:
+                    response["codes"].append(Board.CODES["collision"])
+                    response["collision"] = self.piece_at(collision).id
+
+                    return response
+
             piece_at_new_position = self.piece_at(new_position)
 
             if piece_at_new_position is not None:
-                if piece.color == piece_at_new_position.color:  # Own piece
-                    return False
+                if piece_at_new_position.color != piece.color:
+                    response["codes"].append(Board.CODES["own_piece"])
+                    return response
 
-                self.delete_piece(piece_at_new_position)  # Captured a piece: remove it from the list
+                response["codes"].append(Board.CODES["captured"])
+                response["captured_piece"] = piece_at_new_position.id
 
-            self.set_piece_position(piece, new_position)
-            return True
-
-        return False # TODO: Return a specific value when a piece has been captured
+            response["movement_allowed"] = True
+            return response
 
     def move_pawn(self, pawn, current_position, new_position): # Specific method for pawns (handle exceptions)
-        # TODO: Prevent pawn from eating a piece just in front (it can only eat piece in its diagonal)
-        # TODO: Handle "En passant" move (If there is a piece next to the pawn, it can eat it)
-        # TODO: Handle "Promotion" move (If the pawn reach border of board, it can transform to any kind of piece)
-        if current_position == new_position:
-            return
-
         movement = Movement(current_position, new_position)
         piece_at_new_position = self.piece_at(new_position)
 
+        response = {"codes": [], "movement_allowed": False, "collision": int, "captured_piece": int}
+
         if movement.x == 0:  # Linear movement
-            if pawn.move(current_position, new_position) and self.detect_collision(current_position, new_position) is None:
-                if piece_at_new_position is None:  # Pawn can't capture with linear movement
-                #    self.en_passant_handler(pawn, new_position)
+            if pawn.move(current_position, new_position):
+                collision = self.detect_collision(current_position, new_position)
+
+                if collision is not None:
+                    response["codes"].append(Board.CODES["collision"])
+                    response["collision"] = self.piece_at(collision).id
+
+                    return response
+
+                if piece_at_new_position is not None:  # Pawn can't capture with linear movement
+                    response["codes"].append(Board.CODES["collision"])
+                    response["collision"] = piece_at_new_position.id
+
+                    return response
+
+                #self.en_passant_handler(pawn, new_position)
+                self.set_piece_position(pawn, new_position)
+
+                if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
+                    response["codes"].append(Board.CODES["pawn_promoted"])
+
+                response["movement_allowed"] = True
+
+        else:  # Diagonal movement (should capture a piece)
+            if pawn.move_eat(current_position, new_position):
+
+                if piece_at_new_position is None:
+                    # Piece next to this pawn's current position and behind wanted position
+                    piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
+                    piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
+
+                    response["codes"].append(Board.CODES["pawn_no_piece_to_capture"])
+                    return response
+
+                if pawn.color != piece_at_new_position.color:
+                    self.delete_piece(piece_at_new_position)
+                    #self.en_passant_handler(pawn, new_position)
                     self.set_piece_position(pawn, new_position)
 
                     if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
                         pass
 
                     return True
-        else:  # Diagonal movement (should capture a piece)
-            if pawn.move_eat(current_position, new_position):
-                if piece_at_new_position is not None:  # There is a piece at new position
-                    if pawn.color != piece_at_new_position.color:
-                        self.delete_piece(piece_at_new_position)
-                    #    self.en_passant_handler(pawn, new_position)
-                        self.set_piece_position(pawn, new_position)
-
-                        if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
-                            pass
-
-                        return True
                 else:
                     # Piece next to this pawn's current position and behind wanted position
                     piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
@@ -207,7 +261,7 @@ class Board:
 
                     #    return True
 
-        return False # TODO: Return a specific value when a piece has been captured
+        return response
 
     def en_passant_handler(self, pawn, new_position):
         pieces_next_to_new_position = self.get_pieces_next_to(new_position)
@@ -217,14 +271,6 @@ class Board:
 
         if pieces_next_to_new_position[1] is not None:
             pawn.en_passant[pieces_next_to_new_position[1].id] = self.__game.turn
-
-    def is_movement_allowed(self, piece, current_position, new_position):
-        if piece.move(current_position, new_position):
-            # Knight is allowed to jump over other pieces
-            if isinstance(piece, Knight) or self.detect_collision(current_position, new_position) is None:
-                return True
-
-        return False
 
     def detect_collision(self, current_position, new_position):
         movement = Movement(current_position, new_position)
@@ -268,7 +314,7 @@ class Board:
         king_position = self.get_piece_position(king)
         knight_list = self.get_pieces(Knight, Piece.WHITE if color == Piece.BLACK else Piece.BLACK)
 
-        # Piece list of all pieces that can capture king at next turn
+        # List of all pieces that can capture the king at next turn
         piece_list = list()
 
         # In check detection
@@ -297,6 +343,7 @@ class Board:
         position_list = list()
 
         # Lines
+
         # +X
         position = self.get_collision_to_max_position(position, Position(7, position.y))
 
@@ -354,18 +401,6 @@ class Board:
                 return collision_position
 
         return None
-
-    def get_pieces(self, piece_type, color):
-        pieces_list = list()
-
-        for position, piece in self.__piece_list.items():
-            if piece.color == color and isinstance(piece, piece_type):
-                if piece_type == King:  # Always only one king on board
-                    return piece
-
-                pieces_list.append(position)
-
-        return pieces_list
 
 
 if __name__ == "__main__":
