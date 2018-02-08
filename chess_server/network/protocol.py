@@ -25,8 +25,11 @@ class Protocol:
     @staticmethod
     def move_piece(piece_id, position):
         data = bytearray()
+        code = 0x03
+
         position_field = position.x << 4 | position.y  # 1 octet: 4 bits X | 4 bits Y
 
+        data.append(code)
         data.append(piece_id)
         data.append(position_field)
 
@@ -34,7 +37,34 @@ class Protocol:
 
     @staticmethod
     def move_piece_error(piece_id, error_code, piece_id_collision=None):
+        code = 0x04
+
         if error_code == 1:  # Unauthorized movement
-            return struct.pack("2B", piece_id, error_code)
-        elif error_code == 2:
-            return struct.pack("3B", piece_id, error_code, piece_id)
+            return struct.pack("3B", code, piece_id, error_code)
+        elif error_code == 2 and piece_id_collision is not None:  # Collision
+            return struct.pack("4B", code, piece_id, error_code, piece_id_collision)
+
+    @staticmethod
+    def pawn_promotion(pawn_id):
+        code = 0x05
+
+        return struct.pack("2B", code, pawn_id)
+
+    @staticmethod
+    def game_surrender(game_id):
+        code = 0x06
+
+        return struct.pack("2B", code, game_id)
+
+    @staticmethod
+    def send_message(nickname, message):
+        code = 0x07
+
+        full_message = ("%s: %s" % (nickname, message)).encode()
+        full_message_length = len(full_message)
+
+        return struct.pack("2B%ds" % full_message_length, code, full_message_length, full_message)
+
+    @staticmethod
+    def send_game_information_spectator(game_id, nickname_white, nickname_black, game_time, ):
+        pass  # TODO: to continue
