@@ -19,7 +19,7 @@ class PacketFormatter:
 
     @staticmethod
     def from_position(position):
-        return bytearray(position.x << 4 | position.y)  # 1 octet: 4 bits X | 4 bits Y
+        return bytearray(position.x << 4 | position.y)  # 1 byte: 4 bits X | 4 bits Y
 
     @staticmethod
     def from_piece_list(piece_list):
