@@ -43,15 +43,14 @@ class Protocol:
 
     @staticmethod
     def move_piece(piece_id, position):
-        data = bytearray()
         code = 0x06
-        position_field = position.x << 4 | position.y  # 1 octet: 4 bits X | 4 bits Y
 
-        data.append(code)
-        data.append(piece_id)
-        data.append(position_field)
+        packet = bytearray()
+        packet.append(code)
+        packet.append(piece_id)
+        packet.append(PacketFormatter.from_position(position))
 
-        return data
+        return packet
 
     @staticmethod
     def move_piece_error(piece_id, error_code, piece_id_collision=None):
@@ -64,12 +63,11 @@ class Protocol:
 
     @staticmethod
     def king_in_check(king_id, piece_id_list):
-        packet = bytearray()
         code = 0x08
 
+        packet = bytearray()
         packet.append(code)
         packet.append(king_id)
-
         packet.extend(PacketFormatter.from_list(piece_id_list))
 
         return packet
@@ -88,7 +86,8 @@ class Protocol:
     def game_over_spectator(winner_nickname):
         code = 0x0B
 
-        packet = bytearray().append(code)
+        packet = bytearray()
+        packet.append(code)
         packet.extend(PacketFormatter.from_string(winner_nickname))
 
         return packet
@@ -104,9 +103,9 @@ class Protocol:
 
     @staticmethod
     def game_information_spectator(game_id, nickname_white, nickname_black, game_time, piece_list):
-        packet = bytearray()
         code = 0x0D
 
+        packet = bytearray()
         packet.append(code)
         packet.append(game_id)
         packet.append(PacketFormatter.from_seconds(game_time))
