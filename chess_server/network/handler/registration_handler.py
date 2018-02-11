@@ -1,0 +1,2 @@
+class RegistrationHandler:
+    pass
