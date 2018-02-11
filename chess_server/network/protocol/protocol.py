@@ -18,13 +18,18 @@ class Protocol:
         return packet
 
     @staticmethod
-    def in_queue(place):
+    def registration_response(response_code):
         code = 0x02
+        return bytearray(struct.pack("2B", code, response_code))
+
+    @staticmethod
+    def in_queue(place):
+        code = 0x03
         return bytearray(struct.pack("2B", code, place))
 
     @staticmethod
     def game_information(game_id, color, opponent_nickname):
-        code = 0x03
+        code = 0x04
 
         packet = bytearray(struct.pack("3B", code, game_id, color))
         packet.extend(PacketFormatter.from_string(opponent_nickname))
@@ -33,17 +38,17 @@ class Protocol:
 
     @staticmethod
     def your_turn(remaining_time):
-        code = 0x04
+        code = 0x05
         return bytearray(struct.pack("BH", code, remaining_time))
 
     @staticmethod
     def time_left_warn(time_left):
-        code = 0x05
+        code = 0x06
         return bytearray(struct.pack("2B", code, time_left))
 
     @staticmethod
     def move_piece(piece_id, position):
-        code = 0x06
+        code = 0x07
 
         packet = bytearray()
         packet.append(code)
@@ -54,7 +59,7 @@ class Protocol:
 
     @staticmethod
     def move_piece_error(piece_id, error_code, piece_id_collision=None):
-        code = 0x07
+        code = 0x08
 
         if error_code == 0x01:  # Unauthorized movement
             return bytearray(struct.pack("3B", code, piece_id, error_code))
@@ -63,7 +68,7 @@ class Protocol:
 
     @staticmethod
     def king_in_check(king_id, piece_id_list):
-        code = 0x08
+        code = 0x09
 
         packet = bytearray()
         packet.append(code)
@@ -74,17 +79,17 @@ class Protocol:
 
     @staticmethod
     def pawn_promotion(pawn_id):
-        code = 0x09
+        code = 0x0A
         return struct.pack("2B", code, pawn_id)
 
     @staticmethod
     def game_over(result):
-        code = 0x0A
+        code = 0x0B
         return bytearray(struct.pack("B?", code, result))
 
     @staticmethod
     def game_over_spectator(winner_nickname):
-        code = 0x0B
+        code = 0x0C
 
         packet = bytearray()
         packet.append(code)
@@ -94,7 +99,7 @@ class Protocol:
 
     @staticmethod
     def message(message):
-        code = 0x0C
+        code = 0x0D
 
         packet = bytearray().append(code)
         packet.extend(PacketFormatter.from_string(message))
@@ -103,7 +108,7 @@ class Protocol:
 
     @staticmethod
     def game_information_spectator(game_id, nickname_white, nickname_black, game_time, piece_list):
-        code = 0x0D
+        code = 0x0E
 
         packet = bytearray()
         packet.append(code)
