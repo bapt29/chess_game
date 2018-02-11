@@ -1,4 +1,4 @@
-import random
+import random, time
 
 from chess_server.core.models.board import Board
 from chess_server.core.models.player import Player
@@ -10,6 +10,7 @@ class Game:
         self.__board = Board(self)
         self.__player1 = Player(client1.id, client1.nickname, 0)
         self.__player2 = Player(client2.id, client2.nickname, 0)
+        self.__start_time = 0
         self.__turn = 0
 
     @property
@@ -26,4 +27,5 @@ class Game:
 
     def start(self):
         self.coin_toss()
+        self.__start_time = int(time.time())
         self.__turn += 1
