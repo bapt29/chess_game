@@ -196,7 +196,7 @@ class Board:
             response["movement_allowed"] = True
             return response
 
-    def move_pawn(self, pawn, current_position, new_position): # Specific method for pawns (handle exceptions)
+    def move_pawn(self, pawn, current_position, new_position):  # Specific method for pawns (handle exceptions)
         movement = Movement(current_position, new_position)
         piece_at_new_position = self.piece_at(new_position)
 
@@ -407,13 +407,13 @@ if __name__ == "__main__":
     b = Board()
 
     pawn1 = b.piece_at(Position(0, 1))
-    pawn2 = b.piece_at(Position(1, 6))
+    #pawn2 = b.piece_at(Position(1, 6))
 
     print("\n" + str(b))
 
     b.move_piece(pawn1.id, Position(0, 3))
     print(b)
-    b.move_piece(pawn2.id, Position(1, 4))
-    print(b)
-    b.move_piece(pawn1.id, Position(1, 4))
-    print(b)
+    #b.move_piece(pawn2.id, Position(1, 4))
+    #print(b)
+    #b.move_piece(pawn1.id, Position(1, 4))
+    #print(b)
