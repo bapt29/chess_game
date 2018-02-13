@@ -15,7 +15,7 @@ class Position:
         if not isinstance(value, int):
             raise TypeError('Type int is expected')
 
-        if not value in range(8):
+        if value not in range(8):
             raise ValueError('Value must be lower than 8 and greater or equal to 0')
 
         self.__x = value
@@ -29,7 +29,7 @@ class Position:
         if not isinstance(value, int):
             raise TypeError('Type int is expected')
 
-        if not value in range(8):
+        if value not in range(8):
             raise ValueError('Value must be lower than 8 and greater or equal to 0')
 
         self.__y = value
