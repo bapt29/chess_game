@@ -18,6 +18,10 @@ class Client:
         self.__is_authenticated = False
 
     def __del__(self):
+        if self.__id == Client.MAX_ID - 1:
+            Client.MAX_ID -= 1
+            return
+
         Client.AVAILABLE_ID_LIST.append(self.__id)
 
     @property
@@ -34,8 +38,13 @@ class Client:
 
     @user_id.setter
     def user_id(self, value):
-        if isinstance(value, int) and value > 0:
-            self.__user_id = value
+        if not isinstance(value, int):
+            raise TypeError
+
+        if not value > 0:
+            raise ValueError
+
+        self.__user_id = value
 
     @property
     def nickname(self):
@@ -43,8 +52,13 @@ class Client:
 
     @nickname.setter
     def nickname(self, value):
-        if isinstance(value, str) and len(value) < 32:
-            self.__nickname = value
+        if not isinstance(value, str):
+            raise TypeError
+
+        if not len(value) < 32:
+            raise ValueError
+
+        self.__nickname = value
 
     @property
     def socket(self):
@@ -60,5 +74,7 @@ class Client:
 
     @is_authenticated.setter
     def is_authenticated(self, value):
-        if isinstance(value, bool):
-            self.__is_authenticated = value
+        if not isinstance(value, bool):
+            raise TypeError
+
+        self.__is_authenticated = value
