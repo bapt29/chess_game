@@ -35,7 +35,7 @@ class Client:
 
     @property
     def user_id(self):
-        return self.__id
+        return self.__user_id
 
     @user_id.setter
     def user_id(self, value):
