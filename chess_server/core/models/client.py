@@ -3,7 +3,7 @@ class Client:
     MAX_ID = 1
     AVAILABLE_ID_LIST = []
 
-    def __init__(self, socket):
+    def __init__(self, peer_name, socket):
         if len(Client.AVAILABLE_ID_LIST) > 0:
             id = min(Client.AVAILABLE_ID_LIST)
             Client.AVAILABLE_ID_LIST.remove(id)
@@ -14,6 +14,7 @@ class Client:
         self.__id = id
         self.__user_id = None
         self.__nickname = None
+        self.__peer_name = peer_name
         self.__socket = socket
         self.__is_authenticated = False
 
@@ -59,6 +60,14 @@ class Client:
             raise ValueError
 
         self.__nickname = value
+
+    @property
+    def peer_name(self):
+        return self.__peer_name
+
+    @peer_name.setter
+    def peer_name(self, value):
+        pass  # can't edit client peer name
 
     @property
     def socket(self):
