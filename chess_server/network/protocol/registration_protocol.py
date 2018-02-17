@@ -1,0 +1,2 @@
+class RegistrationProtocol:
+    pass

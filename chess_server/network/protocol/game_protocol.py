@@ -1,0 +1,2 @@
+class GameProtocol:
+    pass
