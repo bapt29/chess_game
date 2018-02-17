@@ -20,7 +20,7 @@ class Board:
              "pawn_no_piece_to_capture": 6
              }
 
-    def __init__(self, game=None):
+    def __init__(self, game):
         self.__game = game
         self.__piece_list = dict()
         self.__init_board()
@@ -52,15 +52,12 @@ class Board:
         self.__piece_list = value
 
     def __init_board(self):
-        # White pawns
 
-        for i in range(8):
-            self.__piece_list[Position(i, 1)] = Pawn(Piece.WHITE)
+        # Pawns
 
-        # Black pawns
-
-        for i in range(8):
-            self.__piece_list[Position(i, 6)] = Pawn(Piece.BLACK)
+        for x in range(8):
+            self.__piece_list[Position(x, 1)] = Pawn(Piece.WHITE)
+            self.__piece_list[Position(x, 6)] = Pawn(Piece.BLACK)
 
         # White knights
 
@@ -143,8 +140,6 @@ class Board:
         return pieces_list
 
     def get_pieces_next_to(self, position):
-        pieces = None
-
         if position.x == 0:  # Left border
             return None, self.piece_at(Position(position.x + 1, position.y))
 
@@ -196,7 +191,7 @@ class Board:
             response["movement_allowed"] = True
             return response
 
-    def move_pawn(self, pawn, current_position, new_position):  # Specific method for pawns (handle exceptions)
+    def move_pawn(self, pawn, current_position, new_position):  # Specific method for pawns
         movement = Movement(current_position, new_position)
         piece_at_new_position = self.piece_at(new_position)
 
@@ -212,16 +207,16 @@ class Board:
 
                     return response
 
-                if piece_at_new_position is not None:  # Pawn can't capture with linear movement
+                if piece_at_new_position is not None:
                     response["codes"].append(Board.CODES["collision"])
                     response["collision"] = piece_at_new_position.id
 
                     return response
 
-                #self.en_passant_handler(pawn, new_position)
                 self.set_piece_position(pawn, new_position)
+                self.en_passant_handler(pawn, new_position)
 
-                if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
+                if pawn.is_promotion_available(new_position):
                     response["codes"].append(Board.CODES["pawn_promoted"])
 
                 response["movement_allowed"] = True
@@ -234,34 +229,41 @@ class Board:
                     piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
                     piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
 
+                    if piece_next_to is None or piece_next_to.color == pawn.color:
+                        return response
+
+                    if pawn.en_passant[piece_next_to.id] + 1 == self.__game.turn:  # If the move is done the next turn
+                        response["movement_allowed"] = True
+                        response["codes"].append(Board.CODES["captured"])
+                        response["captured_piece"] = piece_next_to.id
+
+                        self.delete_piece(piece_next_to)
+                        del pawn.en_passant[piece_next_to.id]
+
+                        self.set_piece_position(pawn, new_position)
+                        self.en_passant_handler(pawn, new_position)
+
+                        if pawn.is_promotion_available(new_position):
+                            response["codes"].append(Board.CODES["pawn_promoted"])
+
+                        return response
+
                     response["codes"].append(Board.CODES["pawn_no_piece_to_capture"])
+
                     return response
 
                 if pawn.color != piece_at_new_position.color:
+                    response["codes"].append(Board.CODES["captured"])
+                    response["captured_piece"] = piece_at_new_position.id
+
                     self.delete_piece(piece_at_new_position)
-                    #self.en_passant_handler(pawn, new_position)
+                    self.en_passant_handler(pawn, new_position)
                     self.set_piece_position(pawn, new_position)
 
-                    if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
-                        pass
+                    if pawn.is_promotion_available(new_position):
+                        response["codes"].append(Board.CODES["pawn_promoted"])
 
-                    return True
-                else:
-                    # Piece next to this pawn's current position and behind wanted position
-                    piece_next_to_y = new_position.y - 1 if pawn.color == Piece.WHITE else new_position.y + 1
-                    piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
-
-                    # if pawn.en_passant[piece_next_to.id] == self.__game.turn + 1:  # If the move is done the next turn
-                    #    self.delete_piece(piece_next_to)
-                    #    del pawn.en_passant[piece_next_to.id]
-                    #    self.set_piece_position(pawn, new_position)
-
-                    #    if pawn.is_promotion_available(new_position):  # TODO: Handle promotion
-                    #        pass
-
-                    #    return True
-
-        return response
+                return response
 
     def en_passant_handler(self, pawn, new_position):
         pieces_next_to_new_position = self.get_pieces_next_to(new_position)
@@ -276,7 +278,7 @@ class Board:
         movement = Movement(current_position, new_position)
         absolute_movement = abs(Movement(current_position, new_position))
 
-        if absolute_movement.x in range(2) or absolute_movement.y in range(2):  # Move one cell only -> no collision possible
+        if absolute_movement.x in range(2) or absolute_movement.y in range(2):  # No collision possible
             return None
 
         x_range = None
@@ -401,19 +403,3 @@ class Board:
                 return collision_position
 
         return None
-
-
-if __name__ == "__main__":
-    b = Board()
-
-    pawn1 = b.piece_at(Position(0, 1))
-    #pawn2 = b.piece_at(Position(1, 6))
-
-    print("\n" + str(b))
-
-    b.move_piece(pawn1.id, Position(0, 3))
-    print(b)
-    #b.move_piece(pawn2.id, Position(1, 4))
-    #print(b)
-    #b.move_piece(pawn1.id, Position(1, 4))
-    #print(b)
