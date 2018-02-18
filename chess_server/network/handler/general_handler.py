@@ -1,7 +1,7 @@
 from chess_server.network.handler.base_handler import BaseHandler
 
 
-class RegistrationHandler(BaseHandler):
+class GeneralHandler(BaseHandler):
     def on_read(self, conn, mask):
         pass
 
