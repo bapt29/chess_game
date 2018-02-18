@@ -34,10 +34,11 @@ class Server:
 
     def on_accept(self, sock, mask):
         conn, addr = self.main_socket.accept()
-        logging.info('accepted connection from {0}'.format(addr))
         conn.setblocking(False)
 
-        self.client_list[conn.fileno()] = Client(conn.getpeername(), socket)
+        logging.info('accepted connection from {0}'.format(addr))
+
+        self.client_list[conn.fileno()] = Client(conn.getpeername(), conn)
         self.selector.register(fileobj=conn, events=selectors.EVENT_READ, data=self.authentication_handler.on_read)
 
     def close_connection(self, conn):
