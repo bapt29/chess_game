@@ -4,6 +4,18 @@ from struct import pack
 class PacketFormatter:
 
     @staticmethod
+    def format_response_packet(type, response, data=None):
+        packet = bytearray()
+
+        packet.append(type)
+        packet.append(response)
+
+        if data is not None:
+            packet.extend(data)
+
+        return packet
+
+    @staticmethod
     def from_string(string):
         converted_string = bytearray()
         converted_string.append(len(string))
