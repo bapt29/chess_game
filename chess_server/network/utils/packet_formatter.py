@@ -1,7 +1,14 @@
-from struct import pack
+from struct import pack, unpack
 
 
 class PacketFormatter:
+
+    @staticmethod
+    def process_packet(data):
+        packet_type, packet_code = unpack('2B', data[:1])
+        packet_data = data[2:]
+
+        return packet_type, packet_code, packet_data
 
     @staticmethod
     def format_response_packet(type, response, data=None):
