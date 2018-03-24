@@ -35,3 +35,19 @@ class AuthenticationProtocol:
         response_code = 0x05
 
         return PacketFormatter.format_response_packet(AUTHENTICATION_TYPE, response_code)
+
+    @staticmethod
+    def server_full():
+        response_code = 0x06
+
+        return PacketFormatter.format_response_packet(AUTHENTICATION_TYPE, response_code)
+
+    @staticmethod
+    def on_authentication(data):
+        username_length = ord(data[0])
+        password_length = ord(data[username_length + 1])
+
+        username = data[0:username_length].decode()
+        password = data[username_length + 1: username_length + 1 + password_length]
+
+        return username, password
