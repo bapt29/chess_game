@@ -1,8 +1,7 @@
 class Player:
 
-    def __init__(self, client_id, nickname, color):
+    def __init__(self, client_id, color):
         self.__client_id = client_id
-        self.__nickname = nickname
         self.__color = color
 
     @property
@@ -20,17 +19,6 @@ class Player:
         self.__client_id = value
 
     @property
-    def nickname(self):
-        return self.__nickname
-
-    @nickname.setter
-    def nickname(self, value):
-        if not isinstance(value, str):
-            raise TypeError('Player nickname must be a string')
-
-        self.__nickname = value
-
-    @property
     def color(self):
         return self.__color
 
@@ -46,4 +34,4 @@ class Player:
 
 
 if __name__ == "__main__":
-    p = Player(12, "test123")
+    p = Player(12, )
