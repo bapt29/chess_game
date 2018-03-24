@@ -3,11 +3,13 @@ import selectors
 import socket
 import time
 
-from chess_server.core.models.client import Client
+from chess_server.network.models.client import Client
 from chess_server.network.handler.authentication_handler import AuthenticationHandler
 from chess_server.network.handler.registration_handler import RegistrationHandler
 from chess_server.network.handler.general_handler import GeneralHandler
 from chess_server.network.handler.game_handler import GameHandler
+
+from chess_server.database.core.database import Database
 
 HOST = '0.0.0.0'
 PORT = 40405
@@ -26,6 +28,8 @@ class Server:
         self.selector.register(fileobj=self.main_socket, events=selectors.EVENT_READ, data=self.on_accept)
 
         self.client_list = {}
+
+        self.db = Database("/home/baptiste/PycharmProjects/chess_game/chess_server/database/core/database.fs")
 
         self.authentication_handler = AuthenticationHandler(self)
         self.registration_handler = RegistrationHandler(self)
