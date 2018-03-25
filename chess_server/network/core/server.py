@@ -1,4 +1,5 @@
 import logging
+import _thread
 import selectors
 import socket
 import time
@@ -43,12 +44,18 @@ class Server:
         logging.info('accepted connection from {0}'.format(addr))
 
         self.client_list[conn.fileno()] = Client(conn.getpeername(), conn)
-        self.selector.register(fileobj=conn, events=selectors.EVENT_READ, data=self.authentication_handler.on_read)
+        self.selector.register(fileobj=conn,
+                               events=selectors.EVENT_READ,
+                               data=self.authentication_handler.on_read)
 
     def close_connection(self, conn):
         client = self.client_list[conn.fileno()]
 
         logging.info('closing connection to {0}'.format(client.peer_name))
+
+        if client.user_id is not None:
+            _thread.start_new_thread(self.authentication_handler.send_disconnection_signal,
+                                     client.user_id)
 
         del self.client_list[conn.fileno()]
         self.selector.unregister(conn)
@@ -58,14 +65,14 @@ class Server:
         last_report_time = time.time()
 
         while True:
-            events = self.selector.select(timeout=0.02)  # Block 20ms
+            events = self.selector.select(timeout=0.02)
 
-            # For each new event, dispatch to its handler
             for key, mask in events:
                 handler = key.data
                 handler(key.fileobj, mask)
 
             cur_time = time.time()
+
             if cur_time - last_report_time > 1:
                 logging.info('Running report...')
                 logging.info('Num active clients = {0}'.format(len(self.client_list)))
