@@ -5,6 +5,8 @@ AUTHENTICATION_TYPE = 0x01
 
 class AuthenticationProtocol:
 
+    request_codes = {"authentication": 0x01}
+
     @staticmethod
     def success(nickname):
         response_code = 0x01
