@@ -26,6 +26,10 @@ class AlreadyFriend(Exception):
     pass
 
 
+class CantBeFriendWithYourself(Exception):
+    pass
+
+
 class UsernameAlreadyTaken(Exception):
     pass
 
