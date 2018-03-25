@@ -18,6 +18,12 @@ class UserManager:
 
         self.users = self.db.db_root["users"]
 
+    def get_user_by_id(self, user_id):
+        if user_id not in self.users.keys():
+            raise UserNotFound
+
+        return self.users[user_id]
+
     def get_user_id(self, username=None, nickname=None, email=None):
         if username is not None:
             for user_id, user in self.users.items():
@@ -40,18 +46,32 @@ class UserManager:
     def get_user_list(self):
         return self.users.values()
 
-    def get_friend_list(self, username):
+    def get_friend_list(self, username, connected=None):
         user_id = self.get_user_id(username=username)
         friend_list = list()
 
-        for friend_username in list(self.users[user_id].friend_list):
-            try:
-                friend_id = self.get_user_id(friend_username)
-                friend = self.users[friend_id]
-            except UserNotFound:
-                pass
-            else:
-                friend_list.append((friend_id, friend.nickname, friend.connected))
+        if connected is not None:
+            if not isinstance(connected, bool):
+                raise TypeError
+
+            for friend_username in list(self.users[user_id].friend_list):
+                try:
+                    friend_id = self.get_user_id(friend_username)
+                    friend = self.users[friend_id]
+                except UserNotFound:
+                    pass
+                else:
+                    if connected == connected:
+                        friend_list.append((friend_id, friend.nickname, friend.connected))
+        else:
+            for friend_username in list(self.users[user_id].friend_list):
+                try:
+                    friend_id = self.get_user_id(friend_username)
+                    friend = self.users[friend_id]
+                except UserNotFound:
+                    pass
+                else:
+                    friend_list.append((friend_id, friend.nickname, friend.connected))
 
         return friend_list
 
@@ -124,6 +144,9 @@ class UserManager:
 
         if friend_id in user.friend_list:
             raise AlreadyFriend
+
+        if friend_id == self.get_user_id(username):
+            raise CantBeFriendWithYourself
 
         user.friend_list.add(friend_id)
         transaction.commit()
