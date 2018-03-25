@@ -25,18 +25,72 @@ class GameManager:
 
         return self.games[game_id]
 
-    def game_list(self, in_progress=None):
-        games_list = dict()
+    def game_list(self, in_progress=None, username=None):
+        games_list = list()
 
         if in_progress is not None:
             if not isinstance(in_progress, bool):
                 raise TypeError
 
-            for id, game in self.games.items():
+            for game_id, game in self.games.items():
                 if game.in_progress == in_progress:
-                    games_list[id] = game
+                    try:
+                        user1 = self.user_manager.get_user(game.player1_username)
+                    except UserNotFound:
+                        user1 = None
+
+                    try:
+                        user2 = self.user_manager.get_user(game.player2_username)
+                    except UserNotFound:
+                        user2 = None
+
+                    games_list.append((game_id,
+                                       user1.nickname,
+                                       user2.nickname,
+                                       game.start_time,
+                                       game.end_time,
+                                       game.in_progress))
+        elif username is not None:
+            if not isinstance(username, str):
+                raise TypeError
+
+            for game_id, game in self.games.items():
+                if username in (game.player1_username, game.player2_username):
+                    try:
+                        user1 = self.user_manager.get_user(game.player1_username)
+                    except UserNotFound:
+                        user1 = None
+
+                    try:
+                        user2 = self.user_manager.get_user(game.player2_username)
+                    except UserNotFound:
+                        user2 = None
+
+                    games_list.append((game_id,
+                                       user1.nickname,
+                                       user2.nickname,
+                                       game.start_time,
+                                       game.end_time,
+                                       game.in_progress))
+
         else:
-            return dict(self.games)
+            for game_id, game in self.games.items():
+                try:
+                    user1 = self.user_manager.get_user(game.player1_username)
+                except UserNotFound:
+                    user1 = None
+
+                try:
+                    user2 = self.user_manager.get_user(game.player2_username)
+                except UserNotFound:
+                    user2 = None
+
+                games_list.append((game_id,
+                                   user1.nickname,
+                                   user2.nickname,
+                                   game.start_time,
+                                   game.end_time,
+                                   game.in_progress))
 
         return games_list
 
@@ -80,6 +134,9 @@ class GameManager:
 
         if not state and not game.in_progress:
             raise GameAlreadyOver
+
+        if not state:
+            self.set_end_time(game_id)
 
         game.in_progress = state
         transaction.commit()
