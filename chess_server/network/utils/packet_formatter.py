@@ -5,17 +5,17 @@ class PacketFormatter:
 
     @staticmethod
     def process_packet(data):
-        packet_type, packet_code = unpack('2B', data[:1])
-        packet_data = data[2:]
+        packet_type, packet_code = data[0], data[1]
+        data = data[2:]
 
-        return packet_type, packet_code, packet_data
+        return packet_type, packet_code
 
     @staticmethod
-    def format_response_packet(type, response, data=None):
+    def format_response_packet(packet_type, packet_code, data=None):
         packet = bytearray()
 
-        packet.append(type)
-        packet.append(response)
+        packet.append(packet_type)
+        packet.append(packet_code)
 
         if data is not None:
             packet.extend(data)
@@ -31,6 +31,14 @@ class PacketFormatter:
             converted_string.append(ord(c))
 
         return converted_string
+
+    @staticmethod
+    def to_string(data):
+        string_length = data[0]
+        string = data[1:string_length+1].decode()
+        data = data[string_length+1:]
+
+        return string
 
     @staticmethod
     def from_list(list):
