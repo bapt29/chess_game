@@ -7,8 +7,8 @@ class BaseHandler(object):
     def __init__(self, server):
         self.server = server
 
-        self.user_manager = UserManager(self.server.db.db_root)
-        self.game_manager = GameManager(self.server.db.db_root)
+        self.user_manager = UserManager(self.server.db)
+        self.game_manager = GameManager(self.server.db)
 
     def on_read(self, conn, mask):
         try:
