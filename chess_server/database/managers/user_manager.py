@@ -120,7 +120,7 @@ class UserManager:
             pass
 
         self.users[min_id] = User(username, nickname, email)
-        self.set_password(min_id, password)
+        self.set_password(username, password)
 
         transaction.commit()
 
