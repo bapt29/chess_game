@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 class Server:
     def __init__(self, host, port):
         self.main_socket = socket.socket()
+        self.main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.main_socket.bind((host, port))
         self.main_socket.listen(100)
         self.main_socket.setblocking(False)
@@ -30,7 +31,7 @@ class Server:
 
         self.client_list = {}
 
-        self.db = Database("/home/baptiste/PycharmProjects/chess_game/chess_server/database/core/database.fs")
+        self.db = Database("/home/user/PycharmProjects/chess_game/chess_server/database/core/database.fs")
 
         self.authentication_handler = AuthenticationHandler(self)
         self.registration_handler = RegistrationHandler(self)
