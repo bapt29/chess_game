@@ -1,4 +1,5 @@
 import selectors
+import logging
 import _thread
 from chess_server.network.handler.base_handler import BaseHandler
 
@@ -9,14 +10,20 @@ from chess_server.network.utils.packet_formatter import PacketFormatter
 from chess_server.error.database_error import *
 
 
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
+
+
 class AuthenticationHandler(BaseHandler):
 
     def handle(self, data, conn):
-        packet_type, packet_code, packet_data = PacketFormatter.process_packet(data)
+        packet_data = bytearray(data)
+        packet_type, packet_code = PacketFormatter.process_packet(packet_data)
 
-        if packet_type == AUTHENTICATION_TYPE:  # Authentication packet type
+        if packet_type == AUTHENTICATION_TYPE:
             if packet_code == AuthenticationProtocol.request_codes["authentication"]:
-                username, password = AuthenticationProtocol.on_authentication(data)
+                username, password = AuthenticationProtocol.on_authentication(packet_data)
+
+                logging.info(packet_data)
 
                 if self.connect(username, password, conn):
                     self.server.selector.unregister(conn)
