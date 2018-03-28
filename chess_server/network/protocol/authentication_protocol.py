@@ -1,4 +1,5 @@
 import struct
+import pickle
 from chess_server.network.utils.packet_formatter import PacketFormatter
 
 AUTHENTICATION_TYPE = 0x01
@@ -47,7 +48,6 @@ class AuthenticationProtocol:
 
     @staticmethod
     def on_authentication(data):
-        username = PacketFormatter.to_string(data)
-        password = PacketFormatter.to_string(data)
+        username, password = pickle.loads(data)
 
         return username, password
