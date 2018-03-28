@@ -38,6 +38,16 @@ class Server:
         self.general_handler = GeneralHandler(self)
         self.game_handler = GameHandler(self)
 
+    def get_client_dict(self):
+
+        while True:
+            try:
+                client_dict = self.client_list.copy()
+            except RuntimeError:  #  Catch error due to changing dictionary size (Thread)
+                pass
+            else:
+                return client_dict
+
     def on_accept(self, sock, mask):
         conn, addr = self.main_socket.accept()
         conn.setblocking(False)
@@ -55,8 +65,10 @@ class Server:
         logging.info('closing connection to {0}'.format(client.peer_name))
 
         if client.user_id is not None:
+            self.authentication_handler.client_disconnected(client.user_id)
+
             _thread.start_new_thread(self.authentication_handler.send_disconnection_signal,
-                                     client.user_id)
+                                     (client.user_id, ))
 
         del self.client_list[conn.fileno()]
         self.selector.unregister(conn)
