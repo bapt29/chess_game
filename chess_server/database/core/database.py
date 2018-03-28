@@ -22,9 +22,13 @@ if __name__ == "__main__":
     db = Database("/home/user/PycharmProjects/chess_game/chess_server/database/core/database.fs")
     user_manager = UserManager(db)
 
+    # user_manager.add_user("test", "coucou", "bonjour", "test@test.com")
+    # user_manager.set_connected(1, False)
+    # user_manager.set_banned(1, False)
+
     for user in user_manager.users.values():
         print(user.username)
 
-    print(user_manager.password_match("test", "bonjour"))
+    user_manager.password_match("test", "bonjour")
 
     db.close()
