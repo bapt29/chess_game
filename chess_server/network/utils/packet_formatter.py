@@ -5,10 +5,9 @@ class PacketFormatter:
 
     @staticmethod
     def process_packet(data):
-        packet_type, packet_code = data[0], data[1]
-        data = data[2:]
+        packet_type, packet_code, packet_data = data[0], data[1], data[2:]
 
-        return packet_type, packet_code
+        return packet_type, packet_code, packet_data
 
     @staticmethod
     def format_response_packet(packet_type, packet_code, data=None):
@@ -36,7 +35,6 @@ class PacketFormatter:
     def to_string(data):
         string_length = data[0]
         string = data[1:string_length+1].decode()
-        data = data[string_length+1:]
 
         return string
 
