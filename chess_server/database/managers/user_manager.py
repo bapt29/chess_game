@@ -61,7 +61,7 @@ class UserManager:
                 except UserNotFound:
                     pass
                 else:
-                    if connected == connected:
+                    if friend.connected == connected:
                         friend_list.append((friend_id, friend.nickname, friend.connected))
         else:
             for friend_username in list(self.users[user_id].friend_list):
@@ -87,8 +87,13 @@ class UserManager:
 
     def authentication(self, username, password):
         self.password_match(username, password)
-        self.is_connected(username)
-        self.is_banned(username)
+        user_id = self.get_user_id(username=username)
+
+        if self.is_connected(username):
+            raise UserAlreadyConnected
+
+        if self.is_banned(username):
+            raise UserBanned
 
     def add_user(self, username, nickname, password, email):
         try:
@@ -182,8 +187,8 @@ class UserManager:
         if user.password_hash != password_hash:
             raise UserBadPassword
 
-    def set_connected(self, username, connected):
-        user = self.get_user(username)
+    def set_connected(self, user_id, connected):
+        user = self.get_user_by_id(user_id)
 
         if not isinstance(connected, bool):
             raise TypeError
@@ -191,11 +196,12 @@ class UserManager:
         user.connected = connected
         transaction.commit()
 
-    def set_banned(self, username, banned):
-        user_id = self.get_user_id(username=username)
-
+    def set_banned(self, user_id, banned):
         if not isinstance(banned, bool):
             raise TypeError
+
+        if user_id not in self.users.keys():
+            raise UserNotFound
 
         self.users[user_id].banned = banned
         transaction.commit()
