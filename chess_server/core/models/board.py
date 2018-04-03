@@ -8,17 +8,10 @@ from chess_server.core.models.bishop import Bishop
 from chess_server.core.models.rook import Rook
 from chess_server.core.models.king import King
 
+from chess_server.error.game_error import *
+
 
 class Board:
-
-    CODES = {"normal": 0,
-             "collision": 1,
-             "captured": 2,
-             "own_piece": 3,
-             "no_movement": 4,
-             "pawn_promoted": 5,
-             "pawn_no_piece_to_capture": 6
-             }
 
     def __init__(self, game):
         self.__game = game
@@ -114,7 +107,7 @@ class Board:
             if piece == wanted_piece:
                 return position
 
-        return None
+        return PieceNotFound
 
     def set_piece_position(self, piece, new_position):
         if piece is not None:
@@ -125,7 +118,7 @@ class Board:
             if piece.id == piece_id:
                 return piece
 
-        return None
+        raise PieceNotFound
 
     def get_pieces(self, piece_type, color):
         pieces_list = list()
@@ -156,14 +149,11 @@ class Board:
         piece = self.get_piece_by_id(piece_id)
         piece_position = self.get_piece_position(piece)
 
-        response = {"codes": [], "movement_allowed": False, "collision": int, "captured_piece": int}
-
         if piece is None:
-            return response
+            raise PieceNotFound
 
         if piece_position == new_position:
-            response["codes"].append(Board.CODES["no_movement"])
-            return response
+            raise NoMovement
 
         if isinstance(piece, Pawn):  # Use specific pawn method
             return self.move_pawn(piece, piece_position, new_position)
@@ -173,53 +163,35 @@ class Board:
                 collision = self.detect_collision(piece_position, new_position)
 
                 if collision is not None:
-                    response["codes"].append(Board.CODES["collision"])
-                    response["collision"] = self.piece_at(collision).id
-
-                    return response
+                    raise PieceCollision(self.piece_at(collision).id)
 
             piece_at_new_position = self.piece_at(new_position)
 
             if piece_at_new_position is not None:
                 if piece_at_new_position.color != piece.color:
-                    response["codes"].append(Board.CODES["own_piece"])
-                    return response
+                    raise OwnPiece
 
-                response["codes"].append(Board.CODES["captured"])
-                response["captured_piece"] = piece_at_new_position.id
-
-            response["movement_allowed"] = True
-            return response
+                raise PieceCaptured(piece_at_new_position.id)
 
     def move_pawn(self, pawn, current_position, new_position):  # Specific method for pawns
         movement = Movement(current_position, new_position)
         piece_at_new_position = self.piece_at(new_position)
-
-        response = {"codes": [], "movement_allowed": False, "collision": int, "captured_piece": int}
 
         if movement.x == 0:  # Linear movement
             if pawn.move(current_position, new_position):
                 collision = self.detect_collision(current_position, new_position)
 
                 if collision is not None:
-                    response["codes"].append(Board.CODES["collision"])
-                    response["collision"] = self.piece_at(collision).id
-
-                    return response
+                    raise PieceCollision(self.piece_at(collision).id)
 
                 if piece_at_new_position is not None:
-                    response["codes"].append(Board.CODES["collision"])
-                    response["collision"] = piece_at_new_position.id
-
-                    return response
+                    raise PieceCollision(piece_at_new_position.id)
 
                 self.set_piece_position(pawn, new_position)
                 self.en_passant_handler(pawn, new_position)
 
                 if pawn.is_promotion_available(new_position):
-                    response["codes"].append(Board.CODES["pawn_promoted"])
-
-                response["movement_allowed"] = True
+                    raise PawnPromoted
 
         else:  # Diagonal movement (should capture a piece)
             if pawn.move_eat(current_position, new_position):
@@ -230,13 +202,9 @@ class Board:
                     piece_next_to = self.piece_at(Position(new_position.x, piece_next_to_y))
 
                     if piece_next_to is None or piece_next_to.color == pawn.color:
-                        return response
+                        raise MovementNotAllowed
 
                     if pawn.en_passant[piece_next_to.id] + 1 == self.__game.turn:  # If the move is done the next turn
-                        response["movement_allowed"] = True
-                        response["codes"].append(Board.CODES["captured"])
-                        response["captured_piece"] = piece_next_to.id
-
                         self.delete_piece(piece_next_to)
                         del pawn.en_passant[piece_next_to.id]
 
@@ -244,26 +212,21 @@ class Board:
                         self.en_passant_handler(pawn, new_position)
 
                         if pawn.is_promotion_available(new_position):
-                            response["codes"].append(Board.CODES["pawn_promoted"])
+                            raise PawnPromotedAndPieceCaptured(piece_next_to.id)
+                        else:
+                            raise PieceCaptured(piece_next_to.id)
 
-                        return response
-
-                    response["codes"].append(Board.CODES["pawn_no_piece_to_capture"])
-
-                    return response
+                    raise MovementNotAllowed
 
                 if pawn.color != piece_at_new_position.color:
-                    response["codes"].append(Board.CODES["captured"])
-                    response["captured_piece"] = piece_at_new_position.id
-
                     self.delete_piece(piece_at_new_position)
                     self.en_passant_handler(pawn, new_position)
                     self.set_piece_position(pawn, new_position)
 
                     if pawn.is_promotion_available(new_position):
-                        response["codes"].append(Board.CODES["pawn_promoted"])
-
-                return response
+                        raise PawnPromotedAndPieceCaptured(piece_at_new_position.id)
+                    else:
+                        raise PieceCaptured(piece_at_new_position.id)
 
     def en_passant_handler(self, pawn, new_position):
         pieces_next_to_new_position = self.get_pieces_next_to(new_position)
