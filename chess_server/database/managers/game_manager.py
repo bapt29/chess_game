@@ -140,3 +140,9 @@ class GameManager:
 
         game.in_progress = state
         transaction.commit()
+
+    def set_password(self, game_id, password):
+        game = self.get_game(game_id)
+        game.password = password
+
+        transaction.commit()
