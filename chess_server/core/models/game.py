@@ -8,10 +8,10 @@ class Game:
 
     def __init__(self, client1, client2):
         self.__board = Board(self)
-        self.__player1 = Player(client1.id, client1.nickname, 0)
-        self.__player2 = Player(client2.id, client2.nickname, 0)
+        self.__player1 = Player(client1.id, 0)
+        self.__player2 = Player(client2.id, 0)
         self.__start_time = 0
-        self.__turn = 0
+        self.__turn = 1
 
     @property
     def turn(self):
@@ -28,4 +28,12 @@ class Game:
     def start(self):
         self.coin_toss()
         self.__start_time = int(time.time())
+
+    def next_turn(self):
         self.__turn += 1
+
+    def player_turn(self):
+        if self.__turn % 2 != 0:
+            return 0
+        else:
+            return 1
