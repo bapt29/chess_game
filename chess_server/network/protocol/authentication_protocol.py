@@ -48,6 +48,6 @@ class AuthenticationProtocol:
 
     @staticmethod
     def on_authentication(data):
-        username, password = pickle.loads(data)
+        username, password = PacketFormatter.to_string(data, 2)
 
         return username, password
