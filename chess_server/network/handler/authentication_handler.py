@@ -7,6 +7,7 @@ from chess_server.network.protocol.authentication_protocol import Authentication
 from chess_server.network.protocol.general_protocol import GeneralProtocol
 from chess_server.network.utils.packet_formatter import PacketFormatter
 
+from chess_server.error.network_error import *
 from chess_server.error.database_error import *
 
 
@@ -20,7 +21,14 @@ class AuthenticationHandler(BaseHandler):
 
         if packet_type == AUTHENTICATION_TYPE:
             if packet_code == AuthenticationProtocol.request_codes["authentication"]:
-                username, password = AuthenticationProtocol.on_authentication(packet_data)
+                username, password = None, None
+
+                try:
+                    username, password = AuthenticationProtocol.on_authentication(packet_data)
+                except InvalidPacket:
+                    conn.send(GeneralProtocol.invalid_packet())
+                    self.server.close_connection(conn)
+                    return
 
                 logging.info(packet_data)
                 logging.info("Username: {} ; Password: {}".format(username, password))
